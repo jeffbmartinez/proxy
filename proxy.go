@@ -31,6 +31,7 @@ const EXIT_USAGE_FAILURE = 2 // Same as golang's flag module uses, hardcoded at 
 const PROJECT_NAME = "proxy"
 
 type ProgramConfig struct {
+	Default   string
 	Overrides []Override
 }
 
@@ -46,19 +47,21 @@ func main() {
 
 	router := mux.NewRouter()
 
-	// router.Handle("/", handler.ForwardTo("/"))
-
-	if configFilename != "" {
-		overrides := make([]Overrides, 0)
-
-		if err := config.ReadSpecific(configFilename, &overrides); err != nil {
-			log.Fatalf("Problem reading from config file: %v", err)
-		}
-
-		for _, override := range overrides {
-			router.HandleFunc(override.From, handler.ForwardTo(override.To))
-		}
+	if configFilename == "" {
+		log.Fatalf("Didn't supply a configuration file. Use -c filename.json to do so.")
 	}
+
+	settings := &ProgramConfig{}
+
+	if err := config.ReadSpecific(configFilename, &settings); err != nil {
+		log.Fatalf("Problem reading from config file: %v", err)
+	}
+
+	for _, override := range settings.Overrides {
+		router.HandleFunc(override.From, handler.ForwardTo(override.To))
+	}
+
+	router.HandleFunc("/{pathname:.*}", handler.Forward(settings.Default))
 
 	n := negroni.New()
 	n.Use(delay.Middleware{})
@@ -69,7 +72,7 @@ func main() {
 		listenHost = ""
 	}
 
-	displayServerInfo(listenHost, listenPort, configFilename)
+	displayServerInfo(listenHost, listenPort, configFilename, settings)
 
 	listenAddress := fmt.Sprintf("%v:%v", listenHost, listenPort)
 	n.Run(listenAddress)
@@ -103,7 +106,7 @@ func getCommandLineArgs() (allowAnyHostToConnect bool, port int, config string) 
 	return
 }
 
-func displayServerInfo(listenHost string, listenPort int, configFilename string) {
+func displayServerInfo(listenHost string, listenPort int, configFilename string, settings *ProgramConfig) {
 	visibleTo := listenHost
 	if visibleTo == "" {
 		visibleTo = "All ip addresses"
@@ -112,6 +115,12 @@ func displayServerInfo(listenHost string, listenPort int, configFilename string)
 	fmt.Printf("%v is running.\n\n", PROJECT_NAME)
 	fmt.Printf("Visible to: %v\n", visibleTo)
 	fmt.Printf("Port: %v\n", listenPort)
-	fmt.Printf("With configuration from file: %v\n\n", configFilename)
+	fmt.Printf("Configuration file: %v\n\n", configFilename)
+	fmt.Printf("Proxy default: %v\n", settings.Default)
+	fmt.Println("Proxy overrides:")
+	for _, override := range settings.Overrides {
+		fmt.Printf("  %v -> %v\n", override.From, override.To)
+	}
+	fmt.Println()
 	fmt.Printf("Hit [ctrl-c] to quit\n")
 }
