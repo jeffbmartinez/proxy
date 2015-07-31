@@ -1,0 +1,10 @@
+[
+    {
+        "From": "/hello",
+        "To": "localhost:8000/hello.txt"
+    },
+    {
+        "From": "/goodbye",
+        "To": "localhost:8000/goodbye.txt"
+    }
+]
