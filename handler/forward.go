@@ -28,7 +28,7 @@ func forwardRequest(response http.ResponseWriter, request *http.Request, forward
 		return
 	}
 
-	newRequest := &http.Request{URL: newUrl}
+	newRequest := &http.Request{URL: newUrl, Header: request.Header}
 
 	intermediateResponse, err := http.DefaultClient.Do(newRequest)
 	if err != nil {
