@@ -16,11 +16,12 @@ import (
 
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
-
 	"github.com/jeffbmartinez/cleanexit"
 	"github.com/jeffbmartinez/config"
 	"github.com/jeffbmartinez/delay"
 	"github.com/jeffbmartinez/log"
+	"github.com/jeffbmartinez/stdoutlog"
+
 	"github.com/jeffbmartinez/proxy/handler"
 )
 
@@ -44,9 +45,6 @@ func main() {
 	cleanexit.SetUpExitOnCtrlC(showNiceExitMessage)
 
 	allowAnyHostToConnect, listenPort, configFilename := getCommandLineArgs()
-
-	router := mux.NewRouter()
-
 	if configFilename == "" {
 		log.Fatalf("Didn't supply a configuration file. Use -c filename.json to do so.")
 	}
@@ -57,6 +55,8 @@ func main() {
 		log.Fatalf("Problem reading from config file: %v", err)
 	}
 
+	router := mux.NewRouter()
+
 	for _, override := range settings.Overrides {
 		router.HandleFunc(override.From, handler.ForwardTo(override.To))
 	}
@@ -65,6 +65,7 @@ func main() {
 
 	n := negroni.New()
 	n.Use(delay.Middleware{})
+	n.Use(stdoutlog.Middleware{})
 	n.UseHandler(router)
 
 	listenHost := "localhost"
