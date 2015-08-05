@@ -8,28 +8,34 @@ import (
 	"github.com/jeffbmartinez/log"
 )
 
-func Forward(defaultEndoint string) func(http.ResponseWriter, *http.Request) {
+// Forward returns a handler function which forwards the unmodified request
+// to the domain in the param.
+func Forward(domain string) func(http.ResponseWriter, *http.Request) {
 	return func(response http.ResponseWriter, request *http.Request) {
-		forwardUrl := defaultEndoint + request.URL.String()
-		forwardRequest(response, request, forwardUrl)
+		forwardURL := domain + request.URL.String()
+		forwardRequest(response, request, forwardURL)
 	}
 }
 
-func ForwardTo(theUrl string) func(http.ResponseWriter, *http.Request) {
+// ForwardTo eturns a handler function which intercepts a request and
+// replaces what would have been the original request's response with the
+// response from an entirely different request at given url. This can be
+// a different domain and endpoint entirely.
+func ForwardTo(theURL string) func(http.ResponseWriter, *http.Request) {
 	return func(response http.ResponseWriter, request *http.Request) {
-		forwardRequest(response, request, theUrl)
+		forwardRequest(response, request, theURL)
 	}
 }
 
-func forwardRequest(response http.ResponseWriter, request *http.Request, forwardedUrl string) {
-	newUrl, err := url.Parse(forwardedUrl)
+func forwardRequest(response http.ResponseWriter, request *http.Request, forwardedURL string) {
+	newURL, err := url.Parse(forwardedURL)
 	if err != nil {
-		log.Errorf("Couldn't parse url (%v): %v", forwardedUrl, err)
+		log.Errorf("Couldn't parse url (%v): %v", forwardedURL, err)
 		return
 	}
 
 	newRequest := &http.Request{
-		URL:    newUrl,
+		URL:    newURL,
 		Header: request.Header,
 	}
 
