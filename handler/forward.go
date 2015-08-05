@@ -8,7 +8,7 @@ import (
 	"github.com/jeffbmartinez/log"
 )
 
-func Forward(defaultEndoint string) func(response http.ResponseWriter, request *http.Request) {
+func Forward(defaultEndoint string) func(http.ResponseWriter, *http.Request) {
 	return func(response http.ResponseWriter, request *http.Request) {
 		forwardUrl := defaultEndoint + request.URL.String()
 		forwardRequest(response, request, forwardUrl)
@@ -28,7 +28,10 @@ func forwardRequest(response http.ResponseWriter, request *http.Request, forward
 		return
 	}
 
-	newRequest := &http.Request{URL: newUrl, Header: request.Header}
+	newRequest := &http.Request{
+		URL:    newUrl,
+		Header: request.Header,
+	}
 
 	intermediateResponse, err := http.DefaultClient.Do(newRequest)
 	if err != nil {
@@ -40,6 +43,17 @@ func forwardRequest(response http.ResponseWriter, request *http.Request, forward
 	if err != nil {
 		log.Errorf("Had a problem reading response body: %v", err)
 		return
+	}
+
+	// There can be multiple values for a given header key. Here I am
+	// clearing any values that may pre-exist in the header and replacing
+	// them with the values from the response.
+	for key, values := range intermediateResponse.Header {
+		response.Header().Del(key)
+
+		for _, value := range values {
+			response.Header().Add(key, value)
+		}
 	}
 
 	response.WriteHeader(intermediateResponse.StatusCode)

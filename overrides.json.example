@@ -1,13 +1,13 @@
 {
     "Default": "http://localhost:8000/",
     "Overrides": [
-	    {
-	        "From": "/hello",
-	        "To": "http://localhost:8000/dir/hello"
-	    },
-	    {
-	        "From": "/goodbye",
-	        "To": "http://localhost:8000/dir/goodbye"
-	    }
-	]
+        {
+            "From": "/hello",
+            "To": "http://localhost:8000/dir/hello"
+        },
+        {
+            "From": "/goodbye",
+            "To": "http://localhost:8000/dir/goodbye"
+        }
+    ]
 }
